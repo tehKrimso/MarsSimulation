@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DefaultNamespace;
 using Static;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -8,23 +9,36 @@ using Random = UnityEngine.Random;
 public class BotController : MonoBehaviour
 {
     public float MoveSpeed = 1f;
-    
+
+    public int Id => _id;
+
     private int _id;
 
-    private Vector3 _currentDirection;
-    private CharacterController _controller;
+    private PointOfInterest _currentDestination;
     
-    public void Init(int id)
+    private CharacterController _controller;
+
+    private Rigidbody _rb;
+
+    private GlobalPlanner _planner;
+
+    public void Init(int id, GlobalPlanner planner)
     {
         _id = id;
+        
+        _planner = planner;
+        _planner.RegisterBot(this);
+        
         _controller = GetComponent<CharacterController>();
+
+        _rb = GetComponent<Rigidbody>();
         
         SetDestination();
     }
 
     private void FixedUpdate()
     {
-        if (_currentDirection == Vector3.zero)
+        if (_currentDestination == null)
             return;
         
         Move();
@@ -32,18 +46,45 @@ public class BotController : MonoBehaviour
 
     private void Move()
     {
-        _controller.Move(_currentDirection * (MoveSpeed * Time.fixedDeltaTime));
+        //TODO: remove character controller and rewrite?
+        //_controller.Move(_currentDirection * (MoveSpeed * Time.fixedDeltaTime));
+
+        Vector3 direction = (_currentDestination.transform.position - transform.position).normalized;
+        
+        _rb.MovePosition(transform.position + direction * (MoveSpeed * Time.fixedDeltaTime));
     }
 
     private void SetDestination()
     {
-        _currentDirection = Random.insideUnitSphere.normalized;
-        _currentDirection.y = 0;
+        PointOfInterest newDestination;
+
+        do
+        {
+            newDestination = _planner.GetNewDestinationPoint();
+        } while (newDestination == _currentDestination);
+
+        _currentDestination = newDestination;
+        
+        //debug
+       
+        Debug.Log($"Agent #{_id} set course to {_currentDestination.name}");
     }
 
     private void OnDrawGizmos()
     {
         Gizmos.color = Colors.GetColor(_id);
-        Gizmos.DrawLine(transform.position,transform.position + _currentDirection*MoveSpeed);
+        Gizmos.DrawLine(transform.position,_currentDestination.transform.position);
+    }
+
+    //TODO: move to point of interest script??
+    private void OnTriggerEnter(Collider other)
+    {
+        PointOfInterest point = other.GetComponent<PointOfInterest>();
+
+        if (point == null)
+            return;
+        
+        if(point == _currentDestination)
+            SetDestination();
     }
 }
