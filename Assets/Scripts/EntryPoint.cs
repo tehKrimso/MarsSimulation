@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using DefaultNamespace;
 using Infrastructure;
 using Static;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class EntryPoint : MonoBehaviour
@@ -18,10 +19,15 @@ public class EntryPoint : MonoBehaviour
 
     private GlobalPlanner _planner;
     private BotFactory _botFactory;
+
+
+    private WorkingZoneDivider _workingZoneDivider;
     
 
     private void Awake()
     {
+        _workingZoneDivider = GetComponent<WorkingZoneDivider>();
+        
         InitializeInfrastructure();
         
         InitBots();
@@ -29,7 +35,7 @@ public class EntryPoint : MonoBehaviour
 
     private void InitializeInfrastructure()
     {
-        _planner = new GlobalPlanner(PointsOfInterest);
+        _planner = new GlobalPlanner(_workingZoneDivider.GetReferencePointsFromWorkingZone(),PointsOfInterest);
         _botFactory = new BotFactory(BotPrefab, SpawnPoints);
     }
 
@@ -46,4 +52,16 @@ public class EntryPoint : MonoBehaviour
             _botFactory.SpawnBots(BotCount,_planner);
         }
     }
+    
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.green;
+        var points = _workingZoneDivider.GetReferencePointsFromWorkingZone();
+        foreach (Vector3 point in points)
+        {
+            Gizmos.DrawSphere(point,0.2f);
+        }
+    }
+    
+    
 }

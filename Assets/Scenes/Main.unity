@@ -1631,6 +1631,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1305235051}
   - component: {fileID: 1305235050}
+  - component: {fileID: 1305235052}
   m_Layer: 0
   m_Name: EntryPoint
   m_TagString: Untagged
@@ -1699,6 +1700,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1305235052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1305235049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 889f6ebac3574b449aa2bfd7464b9c17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Height: 0
+  Width: 0
+  Floor: {fileID: 758392527}
+  Step: 1
+  StartingPoint: {x: 0, y: 0, z: 0}
 --- !u!4 &1486545957 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6969717181156383175, guid: 79012ae5fab0dd2468201b8d1eb6be4c, type: 3}
