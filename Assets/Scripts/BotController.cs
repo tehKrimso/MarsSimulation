@@ -22,6 +22,10 @@ public class BotController : MonoBehaviour
 
     private GlobalPlanner _planner;
 
+    private List<Vector3> _trajectoryPoints;
+
+    private LineRenderer _lineRenderer;
+
     public void Init(int id, GlobalPlanner planner)
     {
         _id = id;
@@ -32,8 +36,18 @@ public class BotController : MonoBehaviour
         _controller = GetComponent<CharacterController>();
 
         _rb = GetComponent<Rigidbody>();
+
+        SetUpLineRenderer();
         
         SetDestination();
+    }
+
+    private void SetUpLineRenderer()
+    {
+        _lineRenderer = GetComponent<LineRenderer>();
+        
+        _lineRenderer.material.SetColor("_Color", Colors.GetColor(_id));
+        _lineRenderer.startWidth = _lineRenderer.endWidth = 0.2f;
     }
 
     private void FixedUpdate()
@@ -52,6 +66,13 @@ public class BotController : MonoBehaviour
         Vector3 direction = (_currentDestination.transform.position - transform.position).normalized;
         
         _rb.MovePosition(transform.position + direction * (MoveSpeed * Time.fixedDeltaTime));
+
+        DrawPath();
+    }
+
+    private void DrawPath()
+    {
+        _lineRenderer.SetPositions(_trajectoryPoints.ToArray());
     }
 
     private void SetDestination()
@@ -64,14 +85,21 @@ public class BotController : MonoBehaviour
         } while (newDestination == _currentDestination);
 
         _currentDestination = newDestination;
-        
+
+        _trajectoryPoints = _planner.GetPathToDestination(this,_currentDestination);
+
         //debug
        
         Debug.Log($"Agent #{_id} set course to {_currentDestination.name}");
+        
+        
     }
 
     private void OnDrawGizmos()
     {
+        if (_currentDestination == null)
+            return;
+        
         Gizmos.color = Colors.GetColor(_id);
         Gizmos.DrawLine(transform.position,_currentDestination.transform.position);
     }

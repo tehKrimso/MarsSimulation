@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DefaultNamespace;
+using GeneticAlgorithm;
 using Infrastructure;
 using Static;
 using Unity.VisualScripting;
@@ -19,6 +20,7 @@ public class EntryPoint : MonoBehaviour
 
     private GlobalPlanner _planner;
     private BotFactory _botFactory;
+    private GeneticAlgorithmHandler _gaHandler;
 
 
     private WorkingZoneDivider _workingZoneDivider;
@@ -27,6 +29,7 @@ public class EntryPoint : MonoBehaviour
     private void Awake()
     {
         _workingZoneDivider = GetComponent<WorkingZoneDivider>();
+        _gaHandler = GetComponent<GeneticAlgorithmHandler>();
         
         InitializeInfrastructure();
         
@@ -35,7 +38,9 @@ public class EntryPoint : MonoBehaviour
 
     private void InitializeInfrastructure()
     {
-        _planner = new GlobalPlanner(_workingZoneDivider.GetReferencePointsFromWorkingZone(),PointsOfInterest);
+        List<Vector3> referencePointsFromWorkingZone = _workingZoneDivider.GetReferencePointsFromWorkingZone();
+        _gaHandler.Init(referencePointsFromWorkingZone);
+        _planner = new GlobalPlanner(referencePointsFromWorkingZone,PointsOfInterest,_gaHandler);
         _botFactory = new BotFactory(BotPrefab, SpawnPoints);
     }
 
