@@ -1,7 +1,7 @@
 using UnityEngine;
 using Vector2 = System.Numerics.Vector2;
 
-namespace Infrastructure.Services
+namespace Infrastructure.Services.Map
 {
     public class MapHandler : IService
     {
@@ -22,9 +22,6 @@ namespace Infrastructure.Services
         public MapNode[,] InitMap()
         {
             _map = new MapNode[mapSizeX,mapSizeY];
-            
-            
-            
             return _map;
         }
 
@@ -56,42 +53,6 @@ namespace Infrastructure.Services
                     };
                 }
             }
-            
-            for (int i = 0; i < mapSizeX; i++)
-            {
-                for (int j = 0; j < mapSizeY; j++)
-                {
-                    var start = new Vector3(_map[i, j].CenterPoint.X, 0, _map[i, j].CenterPoint.Y);
-                    var end = new Vector3(_map[i, j].CenterPoint.X, 5, _map[i, j].CenterPoint.Y);
-                    Debug.DrawLine(start,end,Color.cyan,10f);
-                }
-            }
-            
-            //debug
-            // Vector3 leftTopCorner = floorCenter + new Vector3(-floorWidth / 2, 0, floorHeight / 2);
-            // Vector3 rightTopCorner = floorCenter + new Vector3(floorWidth / 2, 0, floorHeight / 2);
-            // Vector3 leftBottomCorner = floorCenter + new Vector3(-floorWidth / 2, 0, -floorHeight / 2);
-            // Vector3 rightBottomCorner = floorCenter + new Vector3(floorWidth / 2, 0, -floorHeight / 2);
-            //
-            // Debug.DrawLine(leftTopCorner,new Vector3(leftTopCorner.x,5,leftTopCorner.z),Color.red,10f);
-            // Debug.DrawLine(rightTopCorner,new Vector3(rightTopCorner.x,5,rightTopCorner.z),Color.blue,10f);
-            // Debug.DrawLine(leftBottomCorner,new Vector3(leftBottomCorner.x,5,leftBottomCorner.z),Color.green,10f);
-            // Debug.DrawLine(rightBottomCorner,new Vector3(rightBottomCorner.x,5,rightBottomCorner.z),Color.yellow,10f);
-            //
-            // for (int i = 0; i < mapSizeX; i++)
-            // {
-            //     for (int j = 0; j < mapSizeY; j++)
-            //     {
-            //         Vector3 startPoint = new Vector3(leftTopCorner.x + i * _quadrantSize, 0,
-            //             leftTopCorner.z - j * +_quadrantSize);
-            //         
-            //         Vector3 finishPoint = new Vector3(leftTopCorner.x + i * _quadrantSize, 5,
-            //             leftTopCorner.z - j * +_quadrantSize);
-            //         Debug.DrawLine(startPoint,finishPoint,Color.magenta,10f);
-            //     }
-            // }
-            
-            
         }
     }
     
@@ -101,5 +62,6 @@ namespace Infrastructure.Services
         public float Size;
         public Vector2 CenterPoint;
         public bool IsAccessible;
+        public float Elevation;
     }
 }
