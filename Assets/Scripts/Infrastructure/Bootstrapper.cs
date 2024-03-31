@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using Behaviour;
 using Infrastructure.Services;
 using Infrastructure.Services.Map;
+using Infrastructure.Services.Planner;
 using UnityEngine;
 
 namespace Infrastructure
 {
     public class Bootstrapper : MonoBehaviour
     {
-        [Header("Map Settings")] 
-        public GameObject Floor;
-        public float QuadrantSize;
+        // [Header("Map Settings")] 
+        // public GameObject Floor;
+        // public float QuadrantSize;
 
         [Header("Bot settings")] 
         public GameObject BotPrefab;
@@ -22,8 +23,9 @@ namespace Infrastructure
         public List<PointOfInterest> PointsOfInterest;
 
 
+        //private MapHandler _mapHandler;
+        private GlobalPlanner _planner;
         private BotFactory _botFactory;
-        private MapHandler _mapHandler;
 
         private ServiceLocator _container;
 
@@ -38,16 +40,17 @@ namespace Infrastructure
 
         private void RegisterServices()
         {
-            _botFactory = new BotFactory(BotPrefab, BotSpawnPoints);
+            _planner = new GlobalPlanner(PointsOfInterest);
+            _container.RegisterSingle<GlobalPlanner>(_planner);
+            
+            _botFactory = new BotFactory(BotPrefab, BotSpawnPoints, _planner);
             _container.RegisterSingle<BotFactory>(_botFactory);
-
-            _mapHandler = new MapHandler(QuadrantSize, Floor);
-            _container.RegisterSingle<MapHandler>(_mapHandler);
         }
 
         private void InitWorld()
         {
             _botFactory.SpawnBots(BotCount);
+            _planner.CreateInitialTrajectories();
         }
     }
 }

@@ -22,15 +22,22 @@ namespace Behaviour
 
         private LineRenderer _lineRenderer;
 
-        public void Init(int id)
+        public void Init(int id, GlobalPlanner planner)
         {
             _id = id;
+            _planner = planner;
 
             _rb = GetComponent<Rigidbody>();
 
             SetUpLineRenderer();
         
-            SetDestination();
+            //SetDestination();
+        }
+
+        public void SetNewPath(List<Vector3> trajectory, PointOfInterest destination)
+        {
+            _trajectoryPoints = trajectory;
+            _currentDestination = destination;
         }
 
         private void SetUpLineRenderer()
@@ -47,6 +54,7 @@ namespace Behaviour
                 return;
         
             //Move();
+            DrawPath();
         }
 
         private void Move()
@@ -54,8 +62,6 @@ namespace Behaviour
             Vector3 direction = (_currentDestination.transform.position - transform.position).normalized;
         
             _rb.MovePosition(transform.position + direction * (MoveSpeed * Time.fixedDeltaTime));
-
-            DrawPath();
         }
 
         private void DrawPath()
@@ -69,8 +75,7 @@ namespace Behaviour
         
             //debug
             Debug.Log($"Agent #{_id} set course to {_currentDestination.name}");
-        
-        
+            
         }
 
         private void OnDrawGizmos()
