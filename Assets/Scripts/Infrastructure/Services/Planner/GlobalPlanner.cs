@@ -7,41 +7,57 @@ namespace Infrastructure.Services.Planner
 {
     public class GlobalPlanner : IService
     {
-        private readonly List<PointOfInterest> _pointsOfInterest;
+        private readonly List<PointOfInterest> _freePointsOfInterest;
+        private readonly List<PointOfInterest> _occupiedPointsOfInterest;
 
         private List<BotController> _bots;
-        
-        public GlobalPlanner(List<PointOfInterest> pointsOfInterest)
+        private Dictionary<BotController, List<Vector3>> _trajectoriesByBot;
+
+        public GlobalPlanner(List<PointOfInterest> freePointsOfInterest)
         {
-            _pointsOfInterest = pointsOfInterest;
+            _freePointsOfInterest = freePointsOfInterest;
+            _occupiedPointsOfInterest = new List<PointOfInterest>();
 
             _bots = new List<BotController>();
+            _trajectoriesByBot = new Dictionary<BotController, List<Vector3>>();
         }
 
         public void RegisterBot(BotController bot) => _bots.Add(bot); //TODO add check if already registered
 
         public void CreateInitialTrajectories()
         {
-            foreach (BotController bot in _bots)
+            //plan for bot id 0
+            GetDestinationPoint(0);
+            //build trajectory
+           
+
+            for (int i = 1; i < _bots.Count; i++)//plan for others
             {
-                List<PointOfInterest> freePoints = _pointsOfInterest.Where(p => !p.IsOccupied).ToList();
-                PointOfInterest initialDestination = freePoints[Random.Range(0, freePoints.Count)];
-
-                
-                //ga handler
-
-                Vector3 startPoint = bot.transform.position;
-                bot.SetNewPath(
-                    new List<Vector3>()
-                    {
-                        startPoint,
-                        initialDestination.transform.position
-                    },
-                    initialDestination
-                    );
-
-                initialDestination.IsOccupied = true;
+                GetDestinationPoint(i);
+                //build trajectory
             }
+
+        }
+
+        private void GetDestinationPoint(int botId)
+        {
+            PointOfInterest newDestinationPoint = _freePointsOfInterest[Random.Range(0, _freePointsOfInterest.Count)];
+            
+            //set destination point? not whole pass TODO
+            _bots[botId].SetNewPath(
+                new List<Vector3>()
+                {
+                    _bots[botId].transform.position,
+                    newDestinationPoint.transform.position
+                },
+                newDestinationPoint
+            );
+
+            newDestinationPoint.IsOccupied = true;
+            _freePointsOfInterest.Remove(newDestinationPoint);
+            _occupiedPointsOfInterest.Add(newDestinationPoint);
+            
+            //build trajectrory???
         }
     }
 }
