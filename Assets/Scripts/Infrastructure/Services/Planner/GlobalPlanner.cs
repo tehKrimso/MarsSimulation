@@ -13,6 +13,8 @@ namespace Infrastructure.Services.Planner
         private List<BotController> _bots;
         private Dictionary<BotController, List<Vector3>> _trajectoriesByBot;
 
+        private const float TrajectoryStepLength = 1f;
+
         public GlobalPlanner(List<PointOfInterest> freePointsOfInterest)
         {
             _freePointsOfInterest = freePointsOfInterest;
@@ -42,22 +44,44 @@ namespace Infrastructure.Services.Planner
         private void GetDestinationPoint(int botId)
         {
             PointOfInterest newDestinationPoint = _freePointsOfInterest[Random.Range(0, _freePointsOfInterest.Count)];
-            
-            //set destination point? not whole pass TODO
-            _bots[botId].SetNewPath(
-                new List<Vector3>()
-                {
-                    _bots[botId].transform.position,
-                    newDestinationPoint.transform.position
-                },
-                newDestinationPoint
-            );
+
+            BotController bot = _bots[botId];
+            Vector3 botPos = bot.transform.position;
+            Vector3 destinationPos = newDestinationPoint.transform.position;
 
             newDestinationPoint.IsOccupied = true;
             _freePointsOfInterest.Remove(newDestinationPoint);
             _occupiedPointsOfInterest.Add(newDestinationPoint);
             
-            //build trajectrory???
+            //build straight line trajectory with points
+            Vector3 destinationDir = (destinationPos - botPos).normalized;
+            
+            Vector3 currentPoint = botPos;
+            List<Vector3> trajectory = new List<Vector3>();
+
+            while (currentPoint != destinationPos)
+            {
+                if (Vector3.Distance(currentPoint, destinationPos) < TrajectoryStepLength)
+                {
+                    currentPoint = destinationPos;
+                }
+                else
+                {
+                    currentPoint += destinationDir * TrajectoryStepLength;
+                }
+                
+                trajectory.Add(currentPoint);
+            }
+            
+            bot.SetNewPath(trajectory,newDestinationPoint);
+            _trajectoriesByBot[bot] = trajectory;
+
+            //todo check trajectories cross
+            // for (int i = 0; i < botId; i++)
+            // {
+            //     //check if trajectories cross
+            // }
+
         }
     }
 }

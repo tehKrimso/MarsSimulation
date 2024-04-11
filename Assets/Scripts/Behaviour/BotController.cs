@@ -66,6 +66,7 @@ namespace Behaviour
 
         private void DrawPath()
         {
+            _lineRenderer.positionCount = _trajectoryPoints.Count;
             _lineRenderer.SetPositions(_trajectoryPoints.ToArray());
         }
 
@@ -82,9 +83,14 @@ namespace Behaviour
         {
             if (_currentDestination == null)
                 return;
-        
-            Gizmos.color = Colors.GetColor(_id);
-            Gizmos.DrawLine(transform.position,_currentDestination.transform.position);
+
+            Gizmos.color = Color.black;
+
+            foreach (Vector3 point in _trajectoryPoints)
+            {
+                Gizmos.DrawSphere(point, 0.1f);
+            }
+
         }
 
         //TODO: move to point of interest script??
