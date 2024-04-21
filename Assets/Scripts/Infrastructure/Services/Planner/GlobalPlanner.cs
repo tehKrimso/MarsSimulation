@@ -14,6 +14,10 @@ namespace Infrastructure.Services.Planner
         private Dictionary<BotController, List<Vector3>> _trajectoriesByBot;
 
         private const float TrajectoryStepLength = 1f;
+        
+        //debug
+        public List<Vector3> Intersections;
+        //
 
         public GlobalPlanner(List<PointOfInterest> freePointsOfInterest)
         {
@@ -22,6 +26,9 @@ namespace Infrastructure.Services.Planner
 
             _bots = new List<BotController>();
             _trajectoriesByBot = new Dictionary<BotController, List<Vector3>>();
+            
+            //debug
+            Intersections = new List<Vector3>();
         }
 
         public void RegisterBot(BotController bot) => _bots.Add(bot); //TODO add check if already registered
@@ -29,19 +36,19 @@ namespace Infrastructure.Services.Planner
         public void CreateInitialTrajectories()
         {
             //plan for bot id 0
-            GetDestinationPoint(0);
+            SetInitialPath(0);
             //build trajectory
            
 
             for (int i = 1; i < _bots.Count; i++)//plan for others
             {
-                GetDestinationPoint(i);
+                SetInitialPath(i);
                 //build trajectory
             }
 
         }
 
-        private void GetDestinationPoint(int botId)
+        private void SetInitialPath(int botId)
         {
             PointOfInterest newDestinationPoint = _freePointsOfInterest[Random.Range(0, _freePointsOfInterest.Count)];
 
@@ -72,16 +79,66 @@ namespace Infrastructure.Services.Planner
                 
                 trajectory.Add(currentPoint);
             }
+
+            if (botId == 0)
+            {
+                bot.SetNewPath(trajectory,newDestinationPoint);
+                _trajectoriesByBot[bot] = trajectory;
+                return;
+            }
+            
+            //check intersections
+            for (int i = 0; i < botId; i++) //O(n^3) - todo исправить вложенность уменьшить число расчетов
+            {
+                var otherTrajectory = _trajectoriesByBot[_bots[i]];
+                for (int j = 1; j < trajectory.Count; j++)
+                {
+                    Vector3 p1 = trajectory[j - 1];
+                    Vector3 p2 = trajectory[j];
+                    for (int k = 1; k < otherTrajectory.Count; k++)
+                    {
+                        Vector3 p3 = otherTrajectory[k - 1];
+                        Vector3 p4 = otherTrajectory[k];
+                        CheckIntersectionPoint(p1,p2,p3,p4, out var intersectionPoint);
+                    }
+                   
+                }
+            }
+            //check sphere overlap on every point
+            
+            //change trajectory per intersection or overlap
             
             bot.SetNewPath(trajectory,newDestinationPoint);
             _trajectoriesByBot[bot] = trajectory;
+        }
 
-            //todo check trajectories cross
-            // for (int i = 0; i < botId; i++)
-            // {
-            //     //check if trajectories cross
-            // }
 
+        private bool CheckIntersectionPoint(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, out Vector3 intersectionPoint)
+        {
+            intersectionPoint = Vector3.zero;
+            var zn = (p4.z - p3.z) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.z - p1.z);
+
+            if (zn < Mathf.Epsilon) //==0
+            {
+                return false; //lines parallel
+            }
+            
+            var u1 = (p4.x - p3.x) * (p1.z - p3.z) - (p4.z - p3.z) * (p1.x - p3.x);
+            var u2 = (p2.x - p1.x) * (p1.z - p3.z) - (p2.z = p1.z) * (p1.x - p3.x);
+
+            var ua = u1 / zn;
+            var ub = u2 / zn;
+
+            if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1)
+            {
+                intersectionPoint = new Vector3(p1.x + ua * (p2.x - p1.x), 0,p1.z + ua * (p2.z - p1.z));
+                Intersections.Add(intersectionPoint);
+                Debug.Log("Intersection found");
+                return true;
+            }
+
+            
+            return false;
         }
     }
 }

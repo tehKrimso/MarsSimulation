@@ -52,5 +52,20 @@ namespace Infrastructure
             _botFactory.SpawnBots(BotCount);
             _planner.CreateInitialTrajectories();
         }
+
+        //debug
+        private void OnDrawGizmos()
+        {
+            if (_planner.Intersections == null)
+            {
+                return;
+            }
+
+            Gizmos.color = Color.magenta;
+            foreach (Vector3 intersection in _planner.Intersections)
+            {
+                Gizmos.DrawSphere(intersection,0.5f);
+            }
+        }
     }
 }
