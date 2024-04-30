@@ -8,30 +8,41 @@ namespace Infrastructure.Services.Planner
     public class GlobalPlanner : IService
     {
         private readonly List<PointOfInterest> _freePointsOfInterest;
+        private readonly BotFactory _factory;
         private readonly List<PointOfInterest> _occupiedPointsOfInterest;
 
         private List<BotController> _bots;
-        private Dictionary<BotController, List<Vector3>> _trajectoriesByBot;
+        private Dictionary<BotController, List<GameObject>> _trajectoriesByBot;
 
         private const float TrajectoryStepLength = 1f;
+
+        private Collider[] _colliderBuffer;
+        private const int ColliderBufferSize = 15;
         
         //debug
         public List<Vector3> Intersections;
         //
 
-        public GlobalPlanner(List<PointOfInterest> freePointsOfInterest)
+        public GlobalPlanner(List<PointOfInterest> freePointsOfInterest, BotFactory _factory)
         {
             _freePointsOfInterest = freePointsOfInterest;
+            this._factory = _factory;
             _occupiedPointsOfInterest = new List<PointOfInterest>();
 
             _bots = new List<BotController>();
-            _trajectoriesByBot = new Dictionary<BotController, List<Vector3>>();
+            _trajectoriesByBot = new Dictionary<BotController, List<GameObject>>();
+
+            _colliderBuffer = new Collider[ColliderBufferSize];
             
             //debug
             Intersections = new List<Vector3>();
         }
 
-        public void RegisterBot(BotController bot) => _bots.Add(bot); //TODO add check if already registered
+        public void RegisterBot(BotController bot) //bots ask or planner ask every bot?
+        {
+            _bots.Add(bot);
+            //TODO add check if already registered
+        }
 
         public void CreateInitialTrajectories()
         {
@@ -64,7 +75,7 @@ namespace Infrastructure.Services.Planner
             Vector3 destinationDir = (destinationPos - botPos).normalized;
             
             Vector3 currentPoint = botPos;
-            List<Vector3> trajectory = new List<Vector3>();
+            List<GameObject> trajectory = new List<GameObject>();
 
             while (currentPoint != destinationPos)
             {
@@ -77,7 +88,9 @@ namespace Infrastructure.Services.Planner
                     currentPoint += destinationDir * TrajectoryStepLength;
                 }
                 
-                trajectory.Add(currentPoint);
+                
+                
+                trajectory.Add(_factory.SpawnTrajectoryPoint(currentPoint,botId));
             }
 
             if (botId == 0)
@@ -88,20 +101,45 @@ namespace Infrastructure.Services.Planner
             }
             
             //check intersections
-            for (int i = 0; i < botId; i++) //O(n^3) - todo исправить вложенность уменьшить число расчетов
+            // for (int i = 0; i < botId; i++) //O(n^3) - todo исправить вложенность уменьшить число расчетов
+            // {
+            //     var otherTrajectory = _trajectoriesByBot[_bots[i]];
+            //     for (int j = 1; j < trajectory.Count; j++)
+            //     {
+            //         Vector3 p1 = trajectory[j - 1];
+            //         Vector3 p2 = trajectory[j];
+            //         for (int k = 1; k < otherTrajectory.Count; k++)
+            //         {
+            //             Vector3 p3 = otherTrajectory[k - 1];
+            //             Vector3 p4 = otherTrajectory[k];
+            //             //CheckIntersectionPoint(p1,p2,p3,p4, out var intersectionPoint);
+            //         }
+            //        
+            //     }
+            // }
+            foreach (GameObject point in trajectory)
             {
-                var otherTrajectory = _trajectoriesByBot[_bots[i]];
-                for (int j = 1; j < trajectory.Count; j++)
+                int hits = Physics.OverlapSphereNonAlloc(point.transform.position, 1f, _colliderBuffer);
+                if (hits > 0)
                 {
-                    Vector3 p1 = trajectory[j - 1];
-                    Vector3 p2 = trajectory[j];
-                    for (int k = 1; k < otherTrajectory.Count; k++)
+                    foreach (Collider hit in _colliderBuffer)
                     {
-                        Vector3 p3 = otherTrajectory[k - 1];
-                        Vector3 p4 = otherTrajectory[k];
-                        CheckIntersectionPoint(p1,p2,p3,p4, out var intersectionPoint);
+                        if(hit == null)
+                            continue;
+                        
+                        if (hit.TryGetComponent(out TrajectoryPoint trajectoryPoint))
+                        {
+                            if(trajectoryPoint.parentBotId == botId)
+                                continue;
+                        }
+                        else
+                        {
+                            continue; //mb not continue and check what is it?
+                        }
+                        
+                        
+                        Intersections.Add(hit.transform.position);
                     }
-                   
                 }
             }
             //check sphere overlap on every point

@@ -1656,6 +1656,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BotPrefab: {fileID: 7054548762852043544, guid: 207184e9115aeb1489486c350638b3c4, type: 3}
+  TrajectoryPointPrefab: {fileID: 2851585583342574369, guid: ba2f3e5399d0c004c9895a19662a1050, type: 3}
   BotSpawnPoints:
   - {fileID: 928564774}
   - {fileID: 524896555}

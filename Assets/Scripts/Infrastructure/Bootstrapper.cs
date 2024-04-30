@@ -17,6 +17,8 @@ namespace Infrastructure
         [Header("Bot settings")] 
         public GameObject BotPrefab;
 
+        public GameObject TrajectoryPointPrefab;
+
         public List<Transform> BotSpawnPoints;
         public int BotCount;
 
@@ -40,31 +42,37 @@ namespace Infrastructure
 
         private void RegisterServices()
         {
-            _planner = new GlobalPlanner(PointsOfInterest);
-            _container.RegisterSingle<GlobalPlanner>(_planner);
-            
-            _botFactory = new BotFactory(BotPrefab, BotSpawnPoints, _planner);
+            _botFactory = new BotFactory(BotPrefab, TrajectoryPointPrefab, BotSpawnPoints);
             _container.RegisterSingle<BotFactory>(_botFactory);
+            
+            _planner = new GlobalPlanner(PointsOfInterest, _botFactory);
+            _container.RegisterSingle<GlobalPlanner>(_planner);
         }
 
         private void InitWorld()
         {
-            _botFactory.SpawnBots(BotCount);
+            //_botFactory.SpawnBots(BotCount);
+
+            for (int i = 0; i < BotCount; i++)
+            {
+                _planner.RegisterBot(_botFactory.SpawnBot(i));
+            }
+            
             _planner.CreateInitialTrajectories();
         }
 
         //debug
         private void OnDrawGizmos()
         {
-            if (_planner.Intersections == null)
+            if (_planner?.Intersections == null)
             {
                 return;
             }
 
-            Gizmos.color = Color.magenta;
+            Gizmos.color = new Color(1,0,0,0.25f);
             foreach (Vector3 intersection in _planner.Intersections)
             {
-                Gizmos.DrawSphere(intersection,0.5f);
+                Gizmos.DrawSphere(intersection,1f);
             }
         }
     }

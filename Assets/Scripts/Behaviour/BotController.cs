@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Infrastructure.Services.Planner;
 using Static;
 using UnityEngine;
@@ -18,14 +19,14 @@ namespace Behaviour
 
         private GlobalPlanner _planner;
 
-        private List<Vector3> _trajectoryPoints;
+        private List<GameObject> _trajectoryPoints;
 
         private LineRenderer _lineRenderer;
 
-        public void Init(int id, GlobalPlanner planner)
+        public void Init(int id)
         {
             _id = id;
-            _planner = planner;
+            //_planner = planner;
 
             _rb = GetComponent<Rigidbody>();
 
@@ -34,7 +35,7 @@ namespace Behaviour
             //SetDestination();
         }
 
-        public void SetNewPath(List<Vector3> trajectory, PointOfInterest destination)
+        public void SetNewPath(List<GameObject> trajectory, PointOfInterest destination)
         {
             _trajectoryPoints = trajectory;
             _currentDestination = destination;
@@ -67,7 +68,7 @@ namespace Behaviour
         private void DrawPath()
         {
             _lineRenderer.positionCount = _trajectoryPoints.Count;
-            _lineRenderer.SetPositions(_trajectoryPoints.ToArray());
+            _lineRenderer.SetPositions(_trajectoryPoints.Select(p =>p.transform.position).ToArray());
         }
 
         private void SetDestination()
@@ -86,9 +87,9 @@ namespace Behaviour
 
             Gizmos.color = Color.black;
 
-            foreach (Vector3 point in _trajectoryPoints)
+            foreach (GameObject point in _trajectoryPoints)
             {
-                Gizmos.DrawSphere(point, 0.1f);
+                Gizmos.DrawSphere(point.transform.position, 0.1f);
             }
 
         }
