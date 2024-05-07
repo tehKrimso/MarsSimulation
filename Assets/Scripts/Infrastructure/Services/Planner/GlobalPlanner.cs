@@ -18,13 +18,25 @@ namespace Infrastructure.Services.Planner
 
         private Collider[] _colliderBuffer;
         private const int ColliderBufferSize = 15;
-        
+
+        private const float CollisionAvoidanceTime = 4f;
+
+
+        private LayerMask _collisionLayerMask;
         //debug
-        public List<Vector3> Intersections;
+        public List<TrajectoryPoint> Intersections;
         //
 
         public GlobalPlanner(List<PointOfInterest> freePointsOfInterest, BotFactory _factory)
         {
+            
+            _collisionLayerMask = LayerMask.GetMask(new string[]
+            {
+                //"Bot",
+                "Obstacle",
+                "TrajectoryPoint"
+            });
+            
             _freePointsOfInterest = freePointsOfInterest;
             this._factory = _factory;
             _occupiedPointsOfInterest = new List<PointOfInterest>();
@@ -35,7 +47,7 @@ namespace Infrastructure.Services.Planner
             _colliderBuffer = new Collider[ColliderBufferSize];
             
             //debug
-            Intersections = new List<Vector3>();
+            Intersections = new List<TrajectoryPoint>();
         }
 
         public void RegisterBot(BotController bot) //bots ask or planner ask every bot?
@@ -117,9 +129,13 @@ namespace Infrastructure.Services.Planner
             //        
             //     }
             // }
+            bot.SetNewPath(trajectory,newDestinationPoint);
+            _trajectoriesByBot[bot] = trajectory;
+            
             foreach (GameObject point in trajectory)
             {
-                int hits = Physics.OverlapSphereNonAlloc(point.transform.position, 1f, _colliderBuffer);
+                
+                int hits = Physics.OverlapSphereNonAlloc(point.transform.position, 1f, _colliderBuffer, _collisionLayerMask);
                 if (hits > 0)
                 {
                     foreach (Collider hit in _colliderBuffer)
@@ -127,18 +143,33 @@ namespace Infrastructure.Services.Planner
                         if(hit == null)
                             continue;
                         
+                        if(hit.TryGetComponent(out PointOfInterest pointOfInterest))
+                            continue;
+                        
                         if (hit.TryGetComponent(out TrajectoryPoint trajectoryPoint))
                         {
                             if(trajectoryPoint.parentBotId == botId)
                                 continue;
+                            else
+                            {
+                                float botTime = _bots[botId].GetTimeToReachPoint(point);
+                                float otherBotTime = _bots[trajectoryPoint.parentBotId]
+                                    .GetTimeToReachPoint(trajectoryPoint.gameObject);
+
+                                if (Mathf.Abs(botTime - otherBotTime) < CollisionAvoidanceTime)
+                                {
+                                    trajectoryPoint.isCollisionDetected = true;
+                                    Intersections.Add(trajectoryPoint);
+                                }
+                            }
                         }
                         else
                         {
                             continue; //mb not continue and check what is it?
                         }
                         
+                        //Intersections.Add(trajectoryPoint);
                         
-                        Intersections.Add(hit.transform.position);
                     }
                 }
             }
@@ -146,37 +177,36 @@ namespace Infrastructure.Services.Planner
             
             //change trajectory per intersection or overlap
             
-            bot.SetNewPath(trajectory,newDestinationPoint);
-            _trajectoriesByBot[bot] = trajectory;
+            
         }
 
 
-        private bool CheckIntersectionPoint(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, out Vector3 intersectionPoint)
-        {
-            intersectionPoint = Vector3.zero;
-            var zn = (p4.z - p3.z) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.z - p1.z);
-
-            if (zn < Mathf.Epsilon) //==0
-            {
-                return false; //lines parallel
-            }
-            
-            var u1 = (p4.x - p3.x) * (p1.z - p3.z) - (p4.z - p3.z) * (p1.x - p3.x);
-            var u2 = (p2.x - p1.x) * (p1.z - p3.z) - (p2.z = p1.z) * (p1.x - p3.x);
-
-            var ua = u1 / zn;
-            var ub = u2 / zn;
-
-            if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1)
-            {
-                intersectionPoint = new Vector3(p1.x + ua * (p2.x - p1.x), 0,p1.z + ua * (p2.z - p1.z));
-                Intersections.Add(intersectionPoint);
-                Debug.Log("Intersection found");
-                return true;
-            }
-
-            
-            return false;
-        }
+        // private bool CheckIntersectionPoint(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, out Vector3 intersectionPoint)
+        // {
+        //     intersectionPoint = Vector3.zero;
+        //     var zn = (p4.z - p3.z) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.z - p1.z);
+        //
+        //     if (zn < Mathf.Epsilon) //==0
+        //     {
+        //         return false; //lines parallel
+        //     }
+        //     
+        //     var u1 = (p4.x - p3.x) * (p1.z - p3.z) - (p4.z - p3.z) * (p1.x - p3.x);
+        //     var u2 = (p2.x - p1.x) * (p1.z - p3.z) - (p2.z = p1.z) * (p1.x - p3.x);
+        //
+        //     var ua = u1 / zn;
+        //     var ub = u2 / zn;
+        //
+        //     if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1)
+        //     {
+        //         intersectionPoint = new Vector3(p1.x + ua * (p2.x - p1.x), 0,p1.z + ua * (p2.z - p1.z));
+        //         Intersections.Add(intersectionPoint);
+        //         Debug.Log("Intersection found");
+        //         return true;
+        //     }
+        //
+        //     
+        //     return false;
+        // }
     }
 }

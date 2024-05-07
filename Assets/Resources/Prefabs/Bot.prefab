@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 4866944165416387479}
   - component: {fileID: 7036047675941285279}
   - component: {fileID: 3005559908933362051}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Bot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -174,7 +174,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 064ad2ee547bf3b40abe2b3776378f2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MoveSpeed: 5
+  LinearMoveSpeed: 1
+  AngularMoveSpeed: 1
 --- !u!120 &3005559908933362051
 LineRenderer:
   serializedVersion: 2

@@ -3,12 +3,14 @@ using System.Linq;
 using Infrastructure.Services.Planner;
 using Static;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Behaviour
 {
     public class BotController : MonoBehaviour
     {
-        public float MoveSpeed = 1f;
+        public float LinearMoveSpeed = 1f;
+        public float AngularMoveSpeed = 1f; //rad/s?
 
         public int Id => _id;
 
@@ -22,6 +24,8 @@ namespace Behaviour
         private List<GameObject> _trajectoryPoints;
 
         private LineRenderer _lineRenderer;
+
+        private int nextPointIndex = 1;
 
         public void Init(int id)
         {
@@ -39,6 +43,34 @@ namespace Behaviour
         {
             _trajectoryPoints = trajectory;
             _currentDestination = destination;
+
+            nextPointIndex = 1;
+        }
+
+        public float GetTimeToReachPoint(GameObject point)
+        {
+            float time = 0f;
+
+            int pointIndex = _trajectoryPoints.IndexOf(point); //передавать?
+
+            time += (_trajectoryPoints[nextPointIndex].transform.position - transform.position).magnitude /
+                    LinearMoveSpeed;
+            
+            time += Vector3.Angle(transform.forward,
+                (_trajectoryPoints[nextPointIndex].transform.position - transform.position)) * Mathf.Deg2Rad / AngularMoveSpeed; //mathf.deg2rad / angular == можно константой
+            
+            for(int i= nextPointIndex+1; i<pointIndex; i++)
+            {
+                var angle = Vector3.Angle(transform.forward,
+                    (_trajectoryPoints[i].transform.position - _trajectoryPoints[i-1].transform.position));
+
+                time += angle * Mathf.Deg2Rad / AngularMoveSpeed;
+
+                time += (_trajectoryPoints[i].transform.position - _trajectoryPoints[i - 1].transform.position)
+                    .magnitude / LinearMoveSpeed;
+            }
+
+            return time;
         }
 
         private void SetUpLineRenderer()
@@ -54,7 +86,7 @@ namespace Behaviour
             if (_currentDestination == null)
                 return;
         
-            //Move();
+            Move();
             DrawPath();
         }
 
@@ -62,7 +94,7 @@ namespace Behaviour
         {
             Vector3 direction = (_currentDestination.transform.position - transform.position).normalized;
         
-            _rb.MovePosition(transform.position + direction * (MoveSpeed * Time.fixedDeltaTime));
+            _rb.MovePosition(transform.position + direction * (LinearMoveSpeed * Time.fixedDeltaTime));
         }
 
         private void DrawPath()

@@ -69,10 +69,16 @@ namespace Infrastructure
                 return;
             }
 
-            Gizmos.color = new Color(1,0,0,0.25f);
-            foreach (Vector3 intersection in _planner.Intersections)
+            var collisionColor = new Color(1,0,0,0.25f);
+            foreach (TrajectoryPoint intersection in _planner.Intersections)
             {
-                Gizmos.DrawSphere(intersection,1f);
+                if (intersection.isCollisionDetected)
+                    Gizmos.color = collisionColor;
+                else
+                {
+                    Gizmos.color = Color.magenta;
+                }
+                Gizmos.DrawSphere(intersection.transform.position,1f);
             }
         }
     }
