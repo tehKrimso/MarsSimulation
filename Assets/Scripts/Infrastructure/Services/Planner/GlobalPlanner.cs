@@ -66,7 +66,27 @@ namespace Infrastructure.Services.Planner
             for (int i = 1; i < _bots.Count; i++)//plan for others
             {
                 SetInitialPath(i);
+                //CheckIntersectionsForBot(i);
                 //build trajectory
+            }
+
+            //debug
+            foreach (BotController bot in _bots)
+            {
+                List<GameObject> trajectory = bot.GetTrajectory();
+                GameObject lastPoint = trajectory.Last();
+                
+                //bot.transform.LookAt(lastPoint.transform.position);
+                
+                var time = bot.GetTimeToReachPoint(lastPoint);
+                var lengthWhole = Vector3.Distance(trajectory[0].transform.position, lastPoint.transform.position);
+                var length = 0f;
+                for (int i = 1; i < trajectory.Count; i++)
+                {
+                    length += Vector3.Distance(trajectory[i].transform.position, trajectory[i - 1].transform.position);
+                }
+                
+                Debug.Log($"Bot {bot.Id}, LengthByPoints: {length}, LengthFromStartToEnd: {lengthWhole}, Time: {time}");
             }
 
         }
@@ -88,6 +108,7 @@ namespace Infrastructure.Services.Planner
             
             Vector3 currentPoint = botPos;
             List<GameObject> trajectory = new List<GameObject>();
+            trajectory.Add(_factory.SpawnTrajectoryPoint(currentPoint,botId)); //add 0 point
 
             while (currentPoint != destinationPos)
             {
@@ -132,51 +153,56 @@ namespace Infrastructure.Services.Planner
             bot.SetNewPath(trajectory,newDestinationPoint);
             _trajectoriesByBot[bot] = trajectory;
             
-            foreach (GameObject point in trajectory)
-            {
-                
-                int hits = Physics.OverlapSphereNonAlloc(point.transform.position, 1f, _colliderBuffer, _collisionLayerMask);
-                if (hits > 0)
-                {
-                    foreach (Collider hit in _colliderBuffer)
-                    {
-                        if(hit == null)
-                            continue;
-                        
-                        if(hit.TryGetComponent(out PointOfInterest pointOfInterest))
-                            continue;
-                        
-                        if (hit.TryGetComponent(out TrajectoryPoint trajectoryPoint))
-                        {
-                            if(trajectoryPoint.parentBotId == botId)
-                                continue;
-                            else
-                            {
-                                float botTime = _bots[botId].GetTimeToReachPoint(point);
-                                float otherBotTime = _bots[trajectoryPoint.parentBotId]
-                                    .GetTimeToReachPoint(trajectoryPoint.gameObject);
-
-                                if (Mathf.Abs(botTime - otherBotTime) < CollisionAvoidanceTime)
-                                {
-                                    trajectoryPoint.isCollisionDetected = true;
-                                    Intersections.Add(trajectoryPoint);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            continue; //mb not continue and check what is it?
-                        }
-                        
-                        //Intersections.Add(trajectoryPoint);
-                        
-                    }
-                }
-            }
+            // foreach (GameObject point in trajectory)
+            // {
+            //     
+            //     int hits = Physics.OverlapSphereNonAlloc(point.transform.position, 1f, _colliderBuffer, _collisionLayerMask);
+            //     if (hits > 0)
+            //     {
+            //         foreach (Collider hit in _colliderBuffer)
+            //         {
+            //             if(hit == null)
+            //                 continue;
+            //             
+            //             if(hit.TryGetComponent(out PointOfInterest pointOfInterest))
+            //                 continue;
+            //             
+            //             if (hit.TryGetComponent(out TrajectoryPoint trajectoryPoint))
+            //             {
+            //                 if(trajectoryPoint.parentBotId == botId)
+            //                     continue;
+            //                 else
+            //                 {
+            //                     float botTime = _bots[botId].GetTimeToReachPoint(point);
+            //                     float otherBotTime = _bots[trajectoryPoint.parentBotId]
+            //                         .GetTimeToReachPoint(trajectoryPoint.gameObject);
+            //
+            //                     if (Mathf.Abs(botTime - otherBotTime) < CollisionAvoidanceTime)
+            //                     {
+            //                         trajectoryPoint.isCollisionDetected = true;
+            //                         Intersections.Add(trajectoryPoint);
+            //                     }
+            //                 }
+            //             }
+            //             else
+            //             {
+            //                 continue; //mb not continue and check what is it?
+            //             }
+            //             
+            //             //Intersections.Add(trajectoryPoint);
+            //             
+            //         }
+            //     }
+            // }
             //check sphere overlap on every point
             
             //change trajectory per intersection or overlap
             
+            
+        }
+
+        private void CheckIntersectionsForBot(int botId)
+        {
             
         }
 

@@ -39,6 +39,8 @@ namespace Behaviour
             //SetDestination();
         }
 
+        public List<GameObject> GetTrajectory() => _trajectoryPoints;
+
         public void SetNewPath(List<GameObject> trajectory, PointOfInterest destination)
         {
             _trajectoryPoints = trajectory;
@@ -86,15 +88,34 @@ namespace Behaviour
             if (_currentDestination == null)
                 return;
         
-            Move();
+            //Move();
             DrawPath();
         }
 
         private void Move()
         {
             Vector3 direction = (_currentDestination.transform.position - transform.position).normalized;
-        
-            _rb.MovePosition(transform.position + direction * (LinearMoveSpeed * Time.fixedDeltaTime));
+
+            float angle = Vector3.SignedAngle(transform.forward, (_currentDestination.transform.position - transform.position), Vector3.up);
+
+            if (Mathf.Abs(angle) < 1)
+            {
+                transform.LookAt(_currentDestination.transform);
+                _rb.MovePosition(transform.position + direction * (LinearMoveSpeed * Time.fixedDeltaTime));
+                return;
+            }
+            
+            if (angle > 1f)
+            {
+                transform.RotateAround(transform.position, Vector3.up, 1f);
+                return;
+            }
+
+            if(angle < 1f)
+            {
+                transform.RotateAround(transform.position, Vector3.up, -1f);
+            }
+            
         }
 
         private void DrawPath()

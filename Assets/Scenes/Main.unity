@@ -1714,7 +1714,7 @@ MonoBehaviour:
   - {fileID: 2049891536}
   - {fileID: 1111445015}
   - {fileID: 723039353}
-  BotCount: 10
+  BotCount: 1
   PointsOfInterest:
   - {fileID: 2279370441561141362}
   - {fileID: 855712398}
