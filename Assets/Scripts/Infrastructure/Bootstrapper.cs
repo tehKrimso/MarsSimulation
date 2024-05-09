@@ -14,6 +14,9 @@ namespace Infrastructure
         // public GameObject Floor;
         // public float QuadrantSize;
 
+        [Range(1f,15f)]
+        public float TimeScale;
+
         [Header("Bot settings")] 
         public GameObject BotPrefab;
 
@@ -24,6 +27,8 @@ namespace Infrastructure
 
         public List<PointOfInterest> PointsOfInterest;
 
+        [Header("Debug")] 
+        public DebugProvider DebugProvider;
 
         //private MapHandler _mapHandler;
         private GlobalPlanner _planner;
@@ -42,11 +47,18 @@ namespace Infrastructure
 
         private void RegisterServices()
         {
+            _container.RegisterSingle<DebugProvider>(DebugProvider);
+            
             _botFactory = new BotFactory(BotPrefab, TrajectoryPointPrefab, BotSpawnPoints);
             _container.RegisterSingle<BotFactory>(_botFactory);
             
-            _planner = new GlobalPlanner(PointsOfInterest, _botFactory);
+            _planner = new GlobalPlanner(PointsOfInterest, _botFactory, DebugProvider);
             _container.RegisterSingle<GlobalPlanner>(_planner);
+        }
+
+        private void Update()
+        {
+            Time.timeScale = TimeScale;
         }
 
         private void InitWorld()
@@ -62,24 +74,24 @@ namespace Infrastructure
         }
 
         //debug
-        private void OnDrawGizmos()
-        {
-            if (_planner?.Intersections == null)
-            {
-                return;
-            }
-
-            var collisionColor = new Color(1,0,0,0.25f);
-            foreach (TrajectoryPoint intersection in _planner.Intersections)
-            {
-                if (intersection.isCollisionDetected)
-                    Gizmos.color = collisionColor;
-                else
-                {
-                    Gizmos.color = Color.magenta;
-                }
-                Gizmos.DrawSphere(intersection.transform.position,1f);
-            }
-        }
+        // private void OnDrawGizmos()
+        // {
+        //     if (_planner?.Intersections == null)
+        //     {
+        //         return;
+        //     }
+        //
+        //     var collisionColor = new Color(1,0,0,0.25f);
+        //     foreach (TrajectoryPoint intersection in _planner.Intersections)
+        //     {
+        //         if (intersection.isCollisionDetected)
+        //             Gizmos.color = collisionColor;
+        //         else
+        //         {
+        //             Gizmos.color = Color.magenta;
+        //         }
+        //         Gizmos.DrawSphere(intersection.transform.position,1f);
+        //     }
+        // }
     }
 }

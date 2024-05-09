@@ -1680,6 +1680,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1717630630}
   - component: {fileID: 1717630629}
+  - component: {fileID: 1717630631}
   m_Layer: 0
   m_Name: Bootstrapper
   m_TagString: Untagged
@@ -1699,6 +1700,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f79c1c75cb4441d8a0cca2bc245d83b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  TimeScale: 15
   BotPrefab: {fileID: 7054548762852043544, guid: 207184e9115aeb1489486c350638b3c4, type: 3}
   TrajectoryPointPrefab: {fileID: 2851585583342574369, guid: ba2f3e5399d0c004c9895a19662a1050, type: 3}
   BotSpawnPoints:
@@ -1714,7 +1716,7 @@ MonoBehaviour:
   - {fileID: 2049891536}
   - {fileID: 1111445015}
   - {fileID: 723039353}
-  BotCount: 1
+  BotCount: 10
   PointsOfInterest:
   - {fileID: 2279370441561141362}
   - {fileID: 855712398}
@@ -1734,6 +1736,7 @@ MonoBehaviour:
   - {fileID: 1845562980}
   - {fileID: 1110401255}
   - {fileID: 2055098228}
+  DebugProvider: {fileID: 1717630631}
 --- !u!4 &1717630630
 Transform:
   m_ObjectHideFlags: 0
@@ -1743,12 +1746,26 @@ Transform:
   m_GameObject: {fileID: 1717630628}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.2352488, y: 21.715164, z: -17.667618}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1717630631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1717630628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4991c7b58594a42add2fc1a4603a810, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DrawDebug: 0
+  Intersections: []
 --- !u!1001 &1845562978
 PrefabInstance:
   m_ObjectHideFlags: 0

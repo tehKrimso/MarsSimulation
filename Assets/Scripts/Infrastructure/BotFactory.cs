@@ -50,13 +50,14 @@ namespace Infrastructure
             return botController;
         }
 
-        public GameObject SpawnTrajectoryPoint(Vector3 position, int parentId)
+        public TrajectoryPoint SpawnTrajectoryPoint(Vector3 position, int parentId)
         {
             GameObject point = GameObject.Instantiate(_trajectoryPointPrefab, position, Quaternion.identity);
-            
-            point.GetComponent<TrajectoryPoint>().SetParentId(parentId);
 
-            return point;
+            TrajectoryPoint trajectoryPoint = point.GetComponent<TrajectoryPoint>();
+            trajectoryPoint.SetParentId(parentId);
+
+            return trajectoryPoint;
         }
     }
 }

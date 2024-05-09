@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Infrastructure.Services;
 using Infrastructure.Services.Planner;
 using Static;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -14,15 +17,15 @@ namespace Behaviour
 
         public int Id => _id;
 
+        public List<TrajectoryPoint> trajectoryPoints;
+        
         private int _id;
 
         private PointOfInterest _currentDestination;
         private Rigidbody _rb;
 
+
         private GlobalPlanner _planner;
-
-        private List<GameObject> _trajectoryPoints;
-
         private LineRenderer _lineRenderer;
 
         private int nextPointIndex = 1;
@@ -39,36 +42,36 @@ namespace Behaviour
             //SetDestination();
         }
 
-        public List<GameObject> GetTrajectory() => _trajectoryPoints;
+        public List<TrajectoryPoint> GetTrajectory() => trajectoryPoints;
 
-        public void SetNewPath(List<GameObject> trajectory, PointOfInterest destination)
+        public void SetNewPath(List<TrajectoryPoint> trajectory, PointOfInterest destination)
         {
-            _trajectoryPoints = trajectory;
+            trajectoryPoints = trajectory;
             _currentDestination = destination;
 
             nextPointIndex = 1;
         }
 
-        public float GetTimeToReachPoint(GameObject point)
+        public float GetTimeToReachPoint(TrajectoryPoint point)
         {
             float time = 0f;
 
-            int pointIndex = _trajectoryPoints.IndexOf(point); //передавать?
+            int pointIndex = trajectoryPoints.IndexOf(point); //передавать?
 
-            time += (_trajectoryPoints[nextPointIndex].transform.position - transform.position).magnitude /
+            time += (trajectoryPoints[nextPointIndex].transform.position - transform.position).magnitude /
                     LinearMoveSpeed;
             
             time += Vector3.Angle(transform.forward,
-                (_trajectoryPoints[nextPointIndex].transform.position - transform.position)) * Mathf.Deg2Rad / AngularMoveSpeed; //mathf.deg2rad / angular == можно константой
+                (trajectoryPoints[nextPointIndex].transform.position - transform.position)) * Mathf.Deg2Rad / AngularMoveSpeed; //mathf.deg2rad / angular == можно константой
             
             for(int i= nextPointIndex+1; i<pointIndex; i++)
             {
                 var angle = Vector3.Angle(transform.forward,
-                    (_trajectoryPoints[i].transform.position - _trajectoryPoints[i-1].transform.position));
+                    (trajectoryPoints[i].transform.position - trajectoryPoints[i-1].transform.position));
 
                 time += angle * Mathf.Deg2Rad / AngularMoveSpeed;
 
-                time += (_trajectoryPoints[i].transform.position - _trajectoryPoints[i - 1].transform.position)
+                time += (trajectoryPoints[i].transform.position - trajectoryPoints[i - 1].transform.position)
                     .magnitude / LinearMoveSpeed;
             }
 
@@ -88,7 +91,7 @@ namespace Behaviour
             if (_currentDestination == null)
                 return;
         
-            //Move();
+            Move();
             DrawPath();
         }
 
@@ -97,31 +100,37 @@ namespace Behaviour
             Vector3 direction = (_currentDestination.transform.position - transform.position).normalized;
 
             float angle = Vector3.SignedAngle(transform.forward, (_currentDestination.transform.position - transform.position), Vector3.up);
-
-            if (Mathf.Abs(angle) < 1)
+            
+            //Debug.DrawLine(transform.position, transform.position + transform.forward * 2f, Color.red);
+            //Debug.DrawLine(transform.position, _currentDestination.transform.position, Color.magenta);
+            
+            if (Mathf.Abs(angle) < 1.5f)
             {
+                _rb.angularVelocity = Vector3.zero;
                 transform.LookAt(_currentDestination.transform);
                 _rb.MovePosition(transform.position + direction * (LinearMoveSpeed * Time.fixedDeltaTime));
                 return;
             }
             
-            if (angle > 1f)
+            if (angle > 0f)
             {
-                transform.RotateAround(transform.position, Vector3.up, 1f);
+                Quaternion deltaRotation = Quaternion.Euler(0, AngularMoveSpeed, 0);
+                _rb.MoveRotation(_rb.rotation * deltaRotation);
                 return;
             }
 
-            if(angle < 1f)
+            if(angle < 0f)
             {
-                transform.RotateAround(transform.position, Vector3.up, -1f);
+                Quaternion deltaRotation = Quaternion.Euler(0, -AngularMoveSpeed, 0);
+                _rb.MoveRotation(_rb.rotation * deltaRotation);
             }
             
         }
 
         private void DrawPath()
         {
-            _lineRenderer.positionCount = _trajectoryPoints.Count;
-            _lineRenderer.SetPositions(_trajectoryPoints.Select(p =>p.transform.position).ToArray());
+            _lineRenderer.positionCount = trajectoryPoints.Count;
+            _lineRenderer.SetPositions(trajectoryPoints.Select(p =>p.transform.position).ToArray());
         }
 
         private void SetDestination()
@@ -140,7 +149,7 @@ namespace Behaviour
 
             Gizmos.color = Color.black;
 
-            foreach (GameObject point in _trajectoryPoints)
+            foreach (TrajectoryPoint point in trajectoryPoints)
             {
                 Gizmos.DrawSphere(point.transform.position, 0.1f);
             }
@@ -148,15 +157,24 @@ namespace Behaviour
         }
 
         //TODO: move to point of interest script??
-        private void OnTriggerEnter(Collider other)
-        {
-            PointOfInterest point = other.GetComponent<PointOfInterest>();
+        // private void OnTriggerEnter(Collider other)
+        // {
+        //     PointOfInterest point = other.GetComponent<PointOfInterest>();
+        //
+        //     if (point == null)
+        //         return;
+        //
+        //     // if(point == _currentDestination)
+        //     //     SetDestination();
+        // }
 
-            if (point == null)
-                return;
-        
-            if(point == _currentDestination)
-                SetDestination();
+        private void OnCollisionEnter(Collision other)
+        {
+            // if (other.gameObject.layer == LayerMask.NameToLayer("Bot"))
+            // {
+            //     LinearMoveSpeed = 0f;
+            //     Debug.LogWarning($"CollisionHappened at {gameObject.transform.position} bot {Id}");
+            // }
         }
     }
 }

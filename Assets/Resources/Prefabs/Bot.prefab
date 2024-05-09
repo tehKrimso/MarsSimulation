@@ -131,7 +131,7 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
@@ -149,6 +149,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LinearMoveSpeed: 1
   AngularMoveSpeed: 1
+  trajectoryPoints: []
 --- !u!120 &3005559908933362051
 LineRenderer:
   serializedVersion: 2

@@ -9,25 +9,23 @@ namespace Infrastructure.Services.Planner
     {
         private readonly List<PointOfInterest> _freePointsOfInterest;
         private readonly BotFactory _factory;
+        private readonly DebugProvider _debugProvider;
         private readonly List<PointOfInterest> _occupiedPointsOfInterest;
 
         private List<BotController> _bots;
-        private Dictionary<BotController, List<GameObject>> _trajectoriesByBot;
+        private Dictionary<BotController, List<TrajectoryPoint>> _trajectoriesByBot;
 
         private const float TrajectoryStepLength = 1f;
 
         private Collider[] _colliderBuffer;
         private const int ColliderBufferSize = 15;
 
-        private const float CollisionAvoidanceTime = 4f;
+        private const float CollisionAvoidanceTime = 3f;
 
 
         private LayerMask _collisionLayerMask;
-        //debug
-        public List<TrajectoryPoint> Intersections;
-        //
 
-        public GlobalPlanner(List<PointOfInterest> freePointsOfInterest, BotFactory _factory)
+        public GlobalPlanner(List<PointOfInterest> freePointsOfInterest, BotFactory factory, DebugProvider debugProvider)
         {
             
             _collisionLayerMask = LayerMask.GetMask(new string[]
@@ -38,16 +36,14 @@ namespace Infrastructure.Services.Planner
             });
             
             _freePointsOfInterest = freePointsOfInterest;
-            this._factory = _factory;
+            _factory = factory;
+            _debugProvider = debugProvider;
             _occupiedPointsOfInterest = new List<PointOfInterest>();
 
             _bots = new List<BotController>();
-            _trajectoriesByBot = new Dictionary<BotController, List<GameObject>>();
+            _trajectoriesByBot = new Dictionary<BotController, List<TrajectoryPoint>>();
 
             _colliderBuffer = new Collider[ColliderBufferSize];
-            
-            //debug
-            Intersections = new List<TrajectoryPoint>();
         }
 
         public void RegisterBot(BotController bot) //bots ask or planner ask every bot?
@@ -66,15 +62,15 @@ namespace Infrastructure.Services.Planner
             for (int i = 1; i < _bots.Count; i++)//plan for others
             {
                 SetInitialPath(i);
-                //CheckIntersectionsForBot(i);
+                CheckIntersectionsForBot(i);
                 //build trajectory
             }
 
             //debug
             foreach (BotController bot in _bots)
             {
-                List<GameObject> trajectory = bot.GetTrajectory();
-                GameObject lastPoint = trajectory.Last();
+                List<TrajectoryPoint> trajectory = bot.GetTrajectory();
+                TrajectoryPoint lastPoint = trajectory.Last();
                 
                 //bot.transform.LookAt(lastPoint.transform.position);
                 
@@ -107,7 +103,7 @@ namespace Infrastructure.Services.Planner
             Vector3 destinationDir = (destinationPos - botPos).normalized;
             
             Vector3 currentPoint = botPos;
-            List<GameObject> trajectory = new List<GameObject>();
+            List<TrajectoryPoint> trajectory = new List<TrajectoryPoint>();
             trajectory.Add(_factory.SpawnTrajectoryPoint(currentPoint,botId)); //add 0 point
 
             while (currentPoint != destinationPos)
@@ -133,77 +129,45 @@ namespace Infrastructure.Services.Planner
                 return;
             }
             
-            //check intersections
-            // for (int i = 0; i < botId; i++) //O(n^3) - todo исправить вложенность уменьшить число расчетов
-            // {
-            //     var otherTrajectory = _trajectoriesByBot[_bots[i]];
-            //     for (int j = 1; j < trajectory.Count; j++)
-            //     {
-            //         Vector3 p1 = trajectory[j - 1];
-            //         Vector3 p2 = trajectory[j];
-            //         for (int k = 1; k < otherTrajectory.Count; k++)
-            //         {
-            //             Vector3 p3 = otherTrajectory[k - 1];
-            //             Vector3 p4 = otherTrajectory[k];
-            //             //CheckIntersectionPoint(p1,p2,p3,p4, out var intersectionPoint);
-            //         }
-            //        
-            //     }
-            // }
             bot.SetNewPath(trajectory,newDestinationPoint);
             _trajectoriesByBot[bot] = trajectory;
-            
-            // foreach (GameObject point in trajectory)
-            // {
-            //     
-            //     int hits = Physics.OverlapSphereNonAlloc(point.transform.position, 1f, _colliderBuffer, _collisionLayerMask);
-            //     if (hits > 0)
-            //     {
-            //         foreach (Collider hit in _colliderBuffer)
-            //         {
-            //             if(hit == null)
-            //                 continue;
-            //             
-            //             if(hit.TryGetComponent(out PointOfInterest pointOfInterest))
-            //                 continue;
-            //             
-            //             if (hit.TryGetComponent(out TrajectoryPoint trajectoryPoint))
-            //             {
-            //                 if(trajectoryPoint.parentBotId == botId)
-            //                     continue;
-            //                 else
-            //                 {
-            //                     float botTime = _bots[botId].GetTimeToReachPoint(point);
-            //                     float otherBotTime = _bots[trajectoryPoint.parentBotId]
-            //                         .GetTimeToReachPoint(trajectoryPoint.gameObject);
-            //
-            //                     if (Mathf.Abs(botTime - otherBotTime) < CollisionAvoidanceTime)
-            //                     {
-            //                         trajectoryPoint.isCollisionDetected = true;
-            //                         Intersections.Add(trajectoryPoint);
-            //                     }
-            //                 }
-            //             }
-            //             else
-            //             {
-            //                 continue; //mb not continue and check what is it?
-            //             }
-            //             
-            //             //Intersections.Add(trajectoryPoint);
-            //             
-            //         }
-            //     }
-            // }
-            //check sphere overlap on every point
-            
-            //change trajectory per intersection or overlap
-            
-            
         }
 
         private void CheckIntersectionsForBot(int botId)
         {
-            
+            BotController bot = _bots[botId];
+            var botTrajectory = bot.GetTrajectory();
+
+            for (int i = 0; i < botTrajectory.Count - 1; i++)
+            {
+                var point = botTrajectory[i];
+                var hits = Physics.OverlapSphereNonAlloc(point.transform.position, 1f, _colliderBuffer, _collisionLayerMask);
+                foreach (Collider hit in _colliderBuffer)
+                {
+                    if(hit == null)
+                        continue;
+
+                    if (hit.TryGetComponent(out TrajectoryPoint trajectoryPoint))
+                    {
+                        var trajectoryPointParentBotId = trajectoryPoint.parentBotId;
+                        if(trajectoryPointParentBotId == botId)
+                            continue;
+                        
+                        //detect trajectory point of other robot
+                        float botTime = bot.GetTimeToReachPoint(point);
+                        float otherBotTime = _bots[trajectoryPointParentBotId]
+                            .GetTimeToReachPoint(trajectoryPoint); //change game object to trajectory point?
+
+                        if (Mathf.Abs(botTime - otherBotTime) < CollisionAvoidanceTime)
+                        {
+                            _debugProvider.Intersections.Add(point);
+                            Debug.Log(
+                                $"Intersection bot{botId}, time {botTime} with bot{trajectoryPointParentBotId}, time {otherBotTime} at {point.name}");
+                        }
+
+                    }
+                }
+            }
         }
 
 
