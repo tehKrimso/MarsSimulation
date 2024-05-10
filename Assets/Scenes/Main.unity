@@ -1764,7 +1764,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4991c7b58594a42add2fc1a4603a810, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DrawDebug: 0
+  DrawDebug: 1
   Intersections: []
 --- !u!1001 &1845562978
 PrefabInstance:

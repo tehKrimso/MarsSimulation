@@ -15,7 +15,7 @@ namespace Infrastructure.Services
         //debug data lists
         public List<TrajectoryPoint> Intersections;
 
-        private void Awake()
+        public void Init()
         {
             Intersections = new List<TrajectoryPoint>();
         }

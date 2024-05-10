@@ -47,6 +47,7 @@ namespace Infrastructure
 
         private void RegisterServices()
         {
+            DebugProvider.Init();
             _container.RegisterSingle<DebugProvider>(DebugProvider);
             
             _botFactory = new BotFactory(BotPrefab, TrajectoryPointPrefab, BotSpawnPoints);

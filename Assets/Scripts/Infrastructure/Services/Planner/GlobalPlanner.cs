@@ -157,16 +157,22 @@ namespace Infrastructure.Services.Planner
                         float botTime = bot.GetTimeToReachPoint(point);
                         float otherBotTime = _bots[trajectoryPointParentBotId]
                             .GetTimeToReachPoint(trajectoryPoint); //change game object to trajectory point?
+                        
+                        _debugProvider.Intersections.Add(point);
+                        Debug.Log(
+                            $"Intersection bot{botId}, time {botTime} with bot{trajectoryPointParentBotId}, time {otherBotTime} at {point.name}");
 
-                        if (Mathf.Abs(botTime - otherBotTime) < CollisionAvoidanceTime)
-                        {
-                            _debugProvider.Intersections.Add(point);
-                            Debug.Log(
-                                $"Intersection bot{botId}, time {botTime} with bot{trajectoryPointParentBotId}, time {otherBotTime} at {point.name}");
-                        }
+                        // if (Mathf.Abs(botTime - otherBotTime) < CollisionAvoidanceTime)
+                        // {
+                        //     _debugProvider.Intersections.Add(point);
+                        //     Debug.Log(
+                        //         $"Intersection bot{botId}, time {botTime} with bot{trajectoryPointParentBotId}, time {otherBotTime} at {point.name}");
+                        // }
 
                     }
                 }
+
+                _colliderBuffer = new Collider[ColliderBufferSize];
             }
         }
 
