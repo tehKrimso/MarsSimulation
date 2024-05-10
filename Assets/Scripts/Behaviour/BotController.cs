@@ -91,7 +91,7 @@ namespace Behaviour
             if (_currentDestination == null)
                 return;
         
-            Move();
+            //Move();
             DrawPath();
         }
 
@@ -170,11 +170,11 @@ namespace Behaviour
 
         private void OnCollisionEnter(Collision other)
         {
-            // if (other.gameObject.layer == LayerMask.NameToLayer("Bot"))
-            // {
-            //     LinearMoveSpeed = 0f;
-            //     Debug.LogWarning($"CollisionHappened at {gameObject.transform.position} bot {Id}");
-            // }
+            if (other.gameObject.layer == LayerMask.NameToLayer("Bot"))
+            {
+                LinearMoveSpeed = 0f;
+                Debug.LogWarning($"CollisionHappened at {gameObject.transform.position} bot {Id}");
+            }
         }
     }
 }
