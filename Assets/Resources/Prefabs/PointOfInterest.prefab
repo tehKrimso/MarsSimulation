@@ -116,6 +116,7 @@ GameObject:
   - component: {fileID: 6969717181156383175}
   - component: {fileID: 8272318565307759048}
   - component: {fileID: 4133711756668542845}
+  - component: {fileID: -7000754733244980294}
   m_Layer: 0
   m_Name: PointOfInterest
   m_TagString: Untagged
@@ -172,3 +173,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9067ea6ae147044e8c5371ab5dd018b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IsOccupied: 0
+--- !u!114 &-7000754733244980294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3567840514475693783}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9783adc2d9a9af94391feef135651ae0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parentBotId: 0
+  isCollisionDetected: 0

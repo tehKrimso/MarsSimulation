@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Behaviour;
+using GeneticAlgorithm;
 using Infrastructure.Services;
 using Infrastructure.Services.Map;
 using Infrastructure.Services.Planner;
@@ -27,6 +28,9 @@ namespace Infrastructure
 
         public List<PointOfInterest> PointsOfInterest;
 
+        [Header("Genetic Algorithm")] 
+        public GeneticAlgorithmHandler GAHandler;
+        
         [Header("Debug")] 
         public DebugProvider DebugProvider;
 
@@ -47,13 +51,16 @@ namespace Infrastructure
 
         private void RegisterServices()
         {
+            GAHandler.Init();
+            _container.RegisterSingle<GeneticAlgorithmHandler>(GAHandler);
+            
             DebugProvider.Init();
             _container.RegisterSingle<DebugProvider>(DebugProvider);
             
             _botFactory = new BotFactory(BotPrefab, TrajectoryPointPrefab, BotSpawnPoints);
             _container.RegisterSingle<BotFactory>(_botFactory);
             
-            _planner = new GlobalPlanner(PointsOfInterest, _botFactory, DebugProvider);
+            _planner = new GlobalPlanner(PointsOfInterest, _botFactory, DebugProvider, GAHandler);
             _container.RegisterSingle<GlobalPlanner>(_planner);
         }
 

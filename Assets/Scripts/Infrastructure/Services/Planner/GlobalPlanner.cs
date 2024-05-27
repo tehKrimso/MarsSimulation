@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Behaviour;
+using GeneticAlgorithm;
 using UnityEngine;
 
 namespace Infrastructure.Services.Planner
@@ -10,10 +11,12 @@ namespace Infrastructure.Services.Planner
         private readonly List<PointOfInterest> _freePointsOfInterest;
         private readonly BotFactory _factory;
         private readonly DebugProvider _debugProvider;
+        private readonly GeneticAlgorithmHandler _geneticAlgorithmHandler;
         private readonly List<PointOfInterest> _occupiedPointsOfInterest;
 
         private List<BotController> _bots;
         private Dictionary<BotController, List<TrajectoryPoint>> _trajectoriesByBot;
+        private Dictionary<BotController, List<TrajectoryPoint>> _trajectoriesToChange;
 
         private const float TrajectoryStepLength = 1f;
 
@@ -25,7 +28,8 @@ namespace Infrastructure.Services.Planner
 
         private LayerMask _collisionLayerMask;
 
-        public GlobalPlanner(List<PointOfInterest> freePointsOfInterest, BotFactory factory, DebugProvider debugProvider)
+        public GlobalPlanner(List<PointOfInterest> freePointsOfInterest, BotFactory factory,
+            DebugProvider debugProvider, GeneticAlgorithmHandler geneticAlgorithmHandler)
         {
             
             _collisionLayerMask = LayerMask.GetMask(new string[]
@@ -38,10 +42,12 @@ namespace Infrastructure.Services.Planner
             _freePointsOfInterest = freePointsOfInterest;
             _factory = factory;
             _debugProvider = debugProvider;
+            _geneticAlgorithmHandler = geneticAlgorithmHandler;
             _occupiedPointsOfInterest = new List<PointOfInterest>();
 
             _bots = new List<BotController>();
             _trajectoriesByBot = new Dictionary<BotController, List<TrajectoryPoint>>();
+            _trajectoriesToChange = new Dictionary<BotController, List<TrajectoryPoint>>();
 
             _colliderBuffer = new Collider[ColliderBufferSize];
         }
@@ -66,24 +72,51 @@ namespace Infrastructure.Services.Planner
                 //build trajectory
             }
 
-            //debug
-            foreach (BotController bot in _bots)
+            
+
+            while (_trajectoriesToChange.Count > 0)
             {
-                List<TrajectoryPoint> trajectory = bot.GetTrajectory();
-                TrajectoryPoint lastPoint = trajectory.Last();
-                
-                //bot.transform.LookAt(lastPoint.transform.position);
-                
-                var time = bot.GetTimeToReachPoint(lastPoint);
-                var lengthWhole = Vector3.Distance(trajectory[0].transform.position, lastPoint.transform.position);
-                var length = 0f;
-                for (int i = 1; i < trajectory.Count; i++)
+                foreach (var pair in _trajectoriesToChange)
                 {
-                    length += Vector3.Distance(trajectory[i].transform.position, trajectory[i - 1].transform.position);
+                    _geneticAlgorithmHandler.MutateTrajectory(pair.Value);
+                    pair.Key.SetNewPath(pair.Value, pair.Value.Last().GetComponent<PointOfInterest>());
+                    _trajectoriesByBot[pair.Key] = pair.Value;
+                }
+
+                List<int> ids = new List<int>();
+                ids.AddRange(_trajectoriesByBot.Select(x => x.Key.Id).ToList());
+                
+                _trajectoriesToChange.Clear();
+
+                foreach (int id in ids)
+                {
+                    CheckIntersectionsForBot(id);
                 }
                 
-                Debug.Log($"Bot {bot.Id}, LengthByPoints: {length}, LengthFromStartToEnd: {lengthWhole}, Time: {time}");
+                //_trajectoriesByBot.Clear();
             }
+            
+            Debug.Log("!!!!!!!!!!!!!!!!!!NoIntersections");
+            
+
+            //debug
+            // foreach (BotController bot in _bots)
+            // {
+            //     List<TrajectoryPoint> trajectory = bot.GetTrajectory();
+            //     TrajectoryPoint lastPoint = trajectory.Last();
+            //     
+            //     //bot.transform.LookAt(lastPoint.transform.position);
+            //     
+            //     var time = bot.GetTimeToReachPoint(lastPoint);
+            //     var lengthWhole = Vector3.Distance(trajectory[0].transform.position, lastPoint.transform.position);
+            //     var length = 0f;
+            //     for (int i = 1; i < trajectory.Count; i++)
+            //     {
+            //         length += Vector3.Distance(trajectory[i].transform.position, trajectory[i - 1].transform.position);
+            //     }
+            //     
+            //     Debug.Log($"Bot {bot.Id}, LengthByPoints: {length}, LengthFromStartToEnd: {lengthWhole}, Time: {time}");
+            // }
 
         }
 
@@ -91,6 +124,8 @@ namespace Infrastructure.Services.Planner
         {
             PointOfInterest newDestinationPoint = _freePointsOfInterest[Random.Range(0, _freePointsOfInterest.Count)];
 
+            newDestinationPoint.GetComponent<TrajectoryPoint>().SetParentId(botId);
+            
             BotController bot = _bots[botId];
             Vector3 botPos = bot.transform.position;
             Vector3 destinationPos = newDestinationPoint.transform.position;
@@ -111,14 +146,14 @@ namespace Infrastructure.Services.Planner
                 if (Vector3.Distance(currentPoint, destinationPos) < TrajectoryStepLength)
                 {
                     currentPoint = destinationPos;
+                    trajectory.Add(newDestinationPoint.GetComponent<TrajectoryPoint>());
+                    break;
                 }
-                else
-                {
-                    currentPoint += destinationDir * TrajectoryStepLength;
-                }
-                
-                
-                
+
+                currentPoint += destinationDir * TrajectoryStepLength;
+
+
+
                 trajectory.Add(_factory.SpawnTrajectoryPoint(currentPoint,botId));
             }
 
@@ -161,7 +196,9 @@ namespace Infrastructure.Services.Planner
                         if (Mathf.Abs(botTime - otherBotTime) < CollisionAvoidanceTime)
                         {
                             point.isCollisionDetected = true;
-                            
+
+                            _trajectoriesToChange.TryAdd(bot, botTrajectory);
+
                             _debugProvider.Intersections.Add(point);
                             Debug.Log(
                                 $"Intersection bot{botId}, time {botTime} with bot{trajectoryPointParentBotId}, time {otherBotTime} at {point.name}");
